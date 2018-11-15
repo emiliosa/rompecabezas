@@ -30,14 +30,32 @@ public class Ficha {
     
     @Override
     public String toString() {
-        return "\nFilas: " + this.filas +
+        String out = 
+                "\nFilas: " + this.filas +
                 "\nColumnas: " + this.columnas +
                 "\nRotación -90: " + this.rotacionIzq90 +
                 "\nRotación +90: " + this.rotacionDer90 +
                 "\nRotación -180: " + this.rotacionIzq180 +
-                "\nRotación +180: " + this.rotacionDer180;
+                "\nRotación +180: " + this.rotacionDer180 + "\n";
+        
+        for(int fila = 0; fila < this.filas; fila++) {
+            for(int col = 0; col < this.columnas; col++) {
+                out += "\t" + (this.matriz[fila][col] ? 1:0);
+            }
+            out += "\n";
+        }
+        
+        return out;
+    }
+    
+    public int getFilas() {
+        return filas;
     }
 
+    public int getColumnas() {
+        return columnas;
+    }
+    
     private void setMatriz(boolean[] piezas) {
         this.matriz = new boolean[this.filas][this.columnas];
         for (int fila = 0, i = 0; fila < this.filas; fila++) {
@@ -45,6 +63,10 @@ public class Ficha {
                 this.matriz[fila][col] = piezas[i];
             }
         }
+    }
+    
+    public boolean[][] getMatriz() {
+        return this.matriz;
     }
 
     private void calcularRotaciones() {
