@@ -17,6 +17,22 @@ public class Ficha {
     private final int columnas;
     private boolean rotacionIzq90;
     private boolean rotacionDer90;
+
+    public boolean isRotacionIzq90() {
+        return rotacionIzq90;
+    }
+
+    public boolean isRotacionDer90() {
+        return rotacionDer90;
+    }
+
+    public boolean isRotacionIzq180() {
+        return rotacionIzq180;
+    }
+
+    public boolean isRotacionDer180() {
+        return rotacionDer180;
+    }
     private boolean rotacionIzq180;
     private boolean rotacionDer180;
     private boolean[][] matriz;
@@ -65,17 +81,37 @@ public class Ficha {
         }
     }
     
+    private void replaceMatriz(boolean[][] newMatriz) {
+//        this.matriz = new boolean[newMatriz.length][newMatriz[0].length];
+//        for (int fila = 0; fila < this.filas; fila++) {
+//            for (int col = 0; col < this.columnas; col++) {
+//                this.matriz[fila][col] = newMatriz[fila][col];
+//            }
+//        }
+        this.matriz = newMatriz;
+    }
+    
     public boolean[][] getMatriz() {
         return this.matriz;
     }
 
     private void calcularRotaciones() {
-        this.rotacionIzq90 = !Arrays.deepEquals(rotarIzq90(this.matriz), this.matriz);
-        this.rotacionDer90 = !Arrays.deepEquals(rotarDer90(this.matriz), this.matriz);
-        this.rotacionDer180 = !Arrays.deepEquals(rotarDer180(this.matriz), this.matriz);
+        boolean[][] oldMatriz = new boolean[this.matriz.length][this.matriz[0].length];
+        for (int i = 0; i < this.matriz.length; i++) {
+            for (int j = 0; j < this.matriz[i].length; j++) {
+                oldMatriz[i][j] = this.matriz[i][j];
+            }
+        }
+        
+        rotarIzq90();
+        this.rotacionIzq90 = !Arrays.deepEquals(this.matriz, oldMatriz);
+        rotarDer180();
+        this.rotacionDer90 = !Arrays.deepEquals(this.matriz, oldMatriz);
+        rotarDer90();
+        this.rotacionDer180 = !Arrays.deepEquals(this.matriz, oldMatriz);
+        rotarDer180();
         //rotar +180 es igual a rotar -180
-        this.rotacionIzq180 = !Arrays.deepEquals(rotarIzq180(this.matriz), this.matriz);
-        //this.rotacionIzq180 = this.rotacionDer180;
+        this.rotacionIzq180 = this.rotacionDer180;
     }
 
     private static boolean[][] invertirColumnasMatriz(boolean[][] matriz) {
@@ -112,24 +148,48 @@ public class Ficha {
         return matrizOut;
     }
 
-    private static boolean[][] rotarIzq90(boolean[][] matriz) {
-        return invertirColumnasMatriz(
-                transponerMatriz(matriz));
+//    private static boolean[][] rotarIzq90(boolean[][] matriz) {
+//        return invertirColumnasMatriz(
+//                transponerMatriz(matriz));
+//    }
+//
+//    private static boolean[][] rotarDer90(boolean[][] matriz) {
+//        return invertirFilasMatriz(
+//                transponerMatriz(matriz));
+//    }
+//
+//    private static boolean[][] rotarDer180(boolean[][] matriz) {
+//        return rotarDer90(
+//                rotarDer90(matriz));
+//    }
+//
+//    private static boolean[][] rotarIzq180(boolean[][] matriz) {
+//        return rotarIzq90(
+//                rotarIzq90(matriz));
+//    }
+    
+    public void rotarIzq90() {
+        replaceMatriz(
+                invertirColumnasMatriz(
+                    transponerMatriz(this.matriz)));
     }
 
-    private static boolean[][] rotarDer90(boolean[][] matriz) {
-        return invertirFilasMatriz(
-                transponerMatriz(matriz));
+    public void  rotarDer90() {
+        replaceMatriz(
+                invertirFilasMatriz(
+                    transponerMatriz(this.matriz)));
     }
 
-    private static boolean[][] rotarDer180(boolean[][] matriz) {
-        return rotarDer90(
-                rotarDer90(matriz));
+    public void  rotarDer180() {
+        rotarDer90(); 
+        rotarDer90();
     }
 
-    private static boolean[][] rotarIzq180(boolean[][] matriz) {
-        return rotarIzq90(
-                rotarIzq90(matriz));
+    public void  rotarIzq180() {
+        rotarIzq90();
+        rotarIzq90();
     }
+    
+    
 
 }
