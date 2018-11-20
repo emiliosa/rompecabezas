@@ -31,31 +31,21 @@ public class Rompecabezas {
         String tableroData[] = line.split(",");
         Tablero tablero = new Tablero(Integer.valueOf(tableroData[0]), Integer.valueOf(tableroData[1]));
         List<Ficha> fichas = new ArrayList<Ficha>();
-        boolean piezas[][] = new boolean[][]{
-        {
-            
-        },{
-            true
-        },{
-            false,true,
-            true,true,
-            false,true
-        },{
-            true,true,
-            false,true
-        },{
-            true
-        },{
-            true,false,
-            true,true
-        }};
         
-        fichas.add(new Ficha(2, 3, new boolean[]{false,true,true,true,true,false}));
-        fichas.add(new Ficha(1, 1, new boolean[]{true}));
-        fichas.add(new Ficha(3, 2, new boolean[]{false,true,true,true,false,true}));
-        fichas.add(new Ficha(2, 2, new boolean[]{true,true,false,true}));
-        fichas.add(new Ficha(1, 1, new boolean[]{true}));
-        fichas.add(new Ficha(2, 2, new boolean[]{true,false,true,true}));
+        fichas.add(new Ficha(2, 3, "ROJO", new boolean[]{false,true,true,true,true,false}));
+        fichas.add(new Ficha(1, 1, "CYAN", new boolean[]{true}));
+        fichas.add(new Ficha(3, 2, "AMARILLO", new boolean[]{false,true,true,true,false,true}));
+        fichas.add(new Ficha(2, 2, "VERDE", new boolean[]{true,true,false,true}));
+        fichas.add(new Ficha(1, 1, "MAGENTA", new boolean[]{true}));
+        fichas.add(new Ficha(2, 2, "AZUL", new boolean[]{true,false,true,true}));
+        
+//        System.out.println(fichas.get(0).getRotaciones());
+//        System.out.println(fichas.get(1).getRotaciones());
+//        System.out.println(fichas.get(2).getRotaciones());
+//        System.out.println(fichas.get(3).getRotaciones());
+//        System.out.println(fichas.get(4).getRotaciones());
+//        System.out.println(fichas.get(5).getRotaciones());
+
         
 //        tablero.insertarFicha(fichas.get(0), 0, 0);
 //        tablero.insertarFicha(fichas.get(1), 0, 0);
@@ -64,7 +54,7 @@ public class Rompecabezas {
 //        tablero.insertarFicha(fichas.get(4), 0, 0);
 //        tablero.insertarFicha(fichas.get(5), 0, 0);
 
-        tablero = tablero.posicionarFichas(tablero, fichas, 0);
+        tablero.posicionarFichas(tablero, fichas);
         
         System.out.println(tablero);
     }
