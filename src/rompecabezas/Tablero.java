@@ -5,6 +5,9 @@
  */
 package rompecabezas;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -15,8 +18,11 @@ public class Tablero {
 
     private int columnas;
     private int filas;
-    private boolean[][] matriz;
-    private boolean tableroLleno;
+    private String color;
+    private Celda[][] matriz;
+    private List<Tablero> soluciones;
+
+    public static int cantSoluciones = 0;
 
     public int getColumnas() {
         return columnas;
@@ -32,28 +38,51 @@ public class Tablero {
 
         for (int fila = 0; fila < this.filas; fila++) {
             for (int col = 0; col < this.columnas; col++) {
-                out += "\t" + (this.matriz[fila][col] ? 1 : 0);
+                out += "\t" + Celda.COLORES_MAP.get(this.matriz[fila][col].getColor()) + (this.matriz[fila][col].isOcupada() ? 1 : 0) + Celda.COLORES_MAP.get(this.color);
             }
             out += "\n";
         }
 
+        out += "\nSoluciones: " + Tablero.cantSoluciones;
+
         return out;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 67 * hash + Arrays.deepHashCode(this.matriz);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Tablero other = (Tablero) obj;
+        if (!Arrays.deepEquals(this.matriz, other.matriz)) {
+            return false;
+        }
+        return true;
     }
 
     public Tablero(int filas, int columnas) {
         this.columnas = columnas;
         this.filas = filas;
-        this.matriz = new boolean[filas][columnas];
-    }
-    
-    public Tablero(Tablero tablero) {
-        this.columnas = tablero.columnas;
-        this.filas = tablero.filas;
-        //this.matriz = tablero.matriz;
-        this.matriz = new boolean[this.filas][this.columnas];
+        this.color = "NEGRO";
+        this.matriz = new Celda[filas][columnas];
+        this.soluciones = new ArrayList<Tablero>();
+        
         for (int fila = 0; fila < this.filas; fila++) {
             for (int col = 0; col < this.columnas; col++) {
-                this.matriz[fila][col] = tablero.matriz[fila][col];
+                this.matriz[fila][col] = new Celda(false, this.color);
             }
         }
     }
@@ -62,14 +91,14 @@ public class Tablero {
         boolean aux = true;
         for (int i = 0; i < getFilas(); i++) {
             for (int j = 0; j < getColumnas(); j++) {
-                aux &= this.matriz[i][j];
+                aux &= this.matriz[i][j].isOcupada();
             }
         }
         return aux;
     }
 
     public boolean casilleroVacio(int fila, int col) {
-        return !this.matriz[fila][col];
+        return !this.matriz[fila][col].isOcupada();
     }
 
     public boolean insertarFicha(Ficha ficha, int filaTablero, int colTablero) {
@@ -80,112 +109,106 @@ public class Tablero {
                 //si la ficha no se va de rango
                 boolean tieneLugar = (filaTablero + filaFicha) < this.filas && (colTablero + colFicha) < this.columnas;
                 if (tieneLugar) {
-                    boolean choclo = ficha.getMatriz()[filaFicha][colFicha] && this.matriz[filaTablero + filaFicha][colTablero + colFicha];
-                    if (choclo){
+                    boolean choclo
+                            = ficha.getMatriz()[filaFicha][colFicha].isOcupada()
+                            && this.matriz[filaTablero + filaFicha][colTablero + colFicha].isOcupada();
+                    if (choclo) {
                         buscarPosicion = true;
                     }
                 }
             }
         }
-        
+
         if (!buscarPosicion) {
             for (int fila = 0; fila < ficha.getFilas() && (filaTablero + fila) < this.filas; fila++) {
                 for (int col = 0; col < ficha.getColumnas() && (colTablero + col) < this.columnas; col++) {
-                    this.matriz[filaTablero + fila][colTablero + col] = this.matriz[filaTablero + fila][colTablero + col] || ficha.getMatriz()[fila][col];
+                    boolean ocupada
+                            = this.matriz[filaTablero + fila][colTablero + col].isOcupada()
+                            || ficha.getMatriz()[fila][col].isOcupada();
+                    String colorString
+                            = this.matriz[filaTablero + fila][colTablero + col].isOcupada()
+                                    ? this.matriz[filaTablero + fila][colTablero + col].getColor()
+                                    : ficha.getMatriz()[fila][col].getColor();
+                    this.matriz[filaTablero + fila][colTablero + col].setColor(colorString);
+                    this.matriz[filaTablero + fila][colTablero + col].setOcupada(ocupada);
                 }
             }
         }
         return !buscarPosicion;
     }
-    
+
     public boolean quitarFicha(Ficha ficha, int filaTablero, int colTablero) {
         for (int fila = 0; fila < ficha.getFilas() && (filaTablero + fila) < this.filas; fila++) {
             for (int col = 0; col < ficha.getColumnas() && (colTablero + col) < this.columnas; col++) {
-                if (ficha.getMatriz()[fila][col]) {
-                    this.matriz[filaTablero + fila][colTablero + col] = false;
+                if (ficha.getMatriz()[fila][col].isOcupada()) {
+                    this.matriz[filaTablero + fila][colTablero + col].setOcupada(false);
+                    this.matriz[filaTablero + fila][colTablero + col].setColor(this.color);
                 }
             }
         }
-        
+
         return true;
     }
-
-    public Tablero posicionarFichas(Tablero tablero, List<Ficha> fichas, int numFicha) {
+    
+    public boolean solucionExistente() {
+        Iterator i = this.soluciones.iterator();
         
-        for (int i = 0; i < tablero.getFilas() && !tablero.isTableroLleno() && numFicha < fichas.size(); i++) {
-            for (int j = 0; j < tablero.getColumnas(); j++) {
-                
+        while (i.hasNext()) {
+            if (this.equals(i.next())) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
 
-                if (tablero.insertarFicha(fichas.get(numFicha), i, j)) {
-                    if (tablero.isTableroLleno()) {
-                        System.out.println(tablero);
-                    } else {
-                        posicionarFichas(tablero, fichas, ++numFicha);
-                        tablero.quitarFicha(fichas.get(numFicha), i, j);
-                    }
-                }
+    public void posicionarFichas(Tablero tablero, List<Ficha> fichas) {
 
-                if (fichas.get(numFicha).isRotacionDer90()) {
-                    fichas.get(numFicha).rotarDer90();
-                    if (tablero.insertarFicha(fichas.get(numFicha), i, j)) {
-                        fichas.get(numFicha).rotarIzq90();
-                        if (tablero.isTableroLleno()) {
-                            System.out.println(tablero);
-                        } else {
-                            posicionarFichas(tablero, fichas, ++numFicha);
-                            tablero.quitarFicha(fichas.get(numFicha), i, j);
-                        }
-                    } else {
-                        fichas.get(numFicha).rotarIzq90();
-                    }
-                }
+        if (tablero.isTableroLleno()) {
+            //verificar si la solución ya existe (no funciona bien)
+            if (!this.solucionExistente()) {
+                Tablero.cantSoluciones++;
+                this.soluciones.add(this);
+                System.out.println(tablero);
+            }
+            return;
+        }
 
-                if (fichas.get(numFicha).isRotacionDer180()) {
-                    fichas.get(numFicha).rotarDer180();
-                    if (tablero.insertarFicha(fichas.get(numFicha), i, j)) {
-                        fichas.get(numFicha).rotarIzq180();
-                        if (tablero.isTableroLleno()) {
-                            System.out.println(tablero);
-                        } else {
-                            posicionarFichas(tablero, fichas, ++numFicha);
-                            tablero.quitarFicha(fichas.get(numFicha), i, j);
+        //recorrer las piezas
+        for (int numFicha = 0; numFicha < fichas.size(); numFicha++) {
+
+            //recorrer tablero
+            for (int filaTablero = 0; filaTablero < tablero.getFilas(); filaTablero++) {
+                for (int colTablero = 0; colTablero < tablero.getColumnas(); colTablero++) {
+
+                    //todas las rotaciones de cada ficha
+                    List<Ficha> fichasRotadas = fichas.get(numFicha).getRotaciones();
+
+                    //recorro cada una de las rotaciones de cada ficha
+                    for (int numFichaRotada = 0; numFichaRotada < fichasRotadas.size(); numFichaRotada++) {
+
+                        //si pudo insertar la ficha en el tablero
+                        if (tablero.insertarFicha(fichasRotadas.get(numFichaRotada), filaTablero, colTablero)) {
+                            
+                            //si la solución no existe
+                            //if (!this.solucionExistente()) {
+                                
+                                //quitar la ficha insertada de las fichas disponibles
+                                fichas.remove(numFicha);
+
+                                //backtracking
+                                posicionarFichas(tablero, fichas);
+
+                                //luego de probar todas las alternativas de esta etapa 
+                                //quitar la ficha insertada y continuar con las siguientes
+                                tablero.quitarFicha(fichasRotadas.get(numFichaRotada), filaTablero, colTablero);
+                                fichas.add(numFicha, fichasRotadas.get(numFichaRotada));
+                            //}
                         }
-                    } else {
-                        fichas.get(numFicha).rotarIzq180();
-                    }
-                }
-                if (fichas.get(numFicha).isRotacionIzq90()) {
-                    fichas.get(numFicha).rotarIzq90();
-                    if (tablero.insertarFicha(fichas.get(numFicha), i, j)) {
-                        fichas.get(numFicha).rotarDer90();
-                        if (tablero.isTableroLleno()) {
-                            System.out.println(tablero);
-                        } else {
-                            posicionarFichas(tablero, fichas, ++numFicha);
-                            tablero.quitarFicha(fichas.get(numFicha), i, j);
-                        }
-                    } else {
-                        fichas.get(numFicha).rotarDer90();
-                    }
-                }
-                if (fichas.get(numFicha).isRotacionIzq180()) {
-                    fichas.get(numFicha).rotarIzq180();
-                    if (tablero.insertarFicha(fichas.get(numFicha), i, j)) {
-                        fichas.get(numFicha).rotarDer180();
-                        if (tablero.isTableroLleno()) {
-                            System.out.println(tablero);
-                        } else {
-                            posicionarFichas(tablero, fichas, ++numFicha);
-                            tablero.quitarFicha(fichas.get(numFicha), i, j);
-                        }
-                    } else {
-                        fichas.get(numFicha).rotarDer180();
                     }
                 }
             }
         }
-        
-        return tablero;
     }
 
 }
