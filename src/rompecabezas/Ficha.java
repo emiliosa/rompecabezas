@@ -5,7 +5,9 @@
  */
 package rompecabezas;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  *
@@ -15,8 +17,57 @@ public class Ficha {
 
     private final int filas;
     private final int columnas;
+    private String color;
     private boolean rotacionIzq90;
     private boolean rotacionDer90;
+    private boolean rotacionIzq180;
+    private boolean rotacionDer180;
+    private Celda[][] matriz;
+
+    public Ficha(int filas, int columnas, String color, boolean[] piezas) {
+        this.filas = filas;
+        this.columnas = columnas;
+        this.color = color;
+        this.setMatriz(piezas);
+    }
+
+    public Ficha(Celda[][] matriz) {
+        this.filas = matriz.length;
+        this.columnas = matriz[0].length;
+        this.color = matriz[0][0].getColor();
+        this.setMatriz(matriz);
+    }
+
+    public Ficha(Ficha ficha) {
+        this.columnas = ficha.getColumnas();
+        this.filas = ficha.getFilas();
+        this.color = ficha.getColor();
+        this.setMatriz(ficha.getMatriz());
+    }
+
+    @Override
+    public String toString() {
+        String out
+                = "\nFilas: " + this.filas
+                + "\nColumnas: " + this.columnas
+                + "\nRotación -90: " + this.rotacionIzq90
+                + "\nRotación +90: " + this.rotacionDer90
+                + "\nRotación -180: " + this.rotacionIzq180
+                + "\nRotación +180: " + this.rotacionDer180 + "\n";
+
+        for (int fila = 0; fila < this.filas; fila++) {
+            for (int col = 0; col < this.columnas; col++) {
+                out += "\t" + Celda.COLORES_MAP.get(this.getColor()) + (this.matriz[fila][col].isOcupada() ? 1 : 0) + Celda.COLORES_MAP.get("NEGRO");
+            }
+            out += "\n";
+        }
+
+        return out;
+    }
+
+    public String getColor() {
+        return this.color;
+    }
 
     public boolean isRotacionIzq90() {
         return rotacionIzq90;
@@ -33,37 +84,7 @@ public class Ficha {
     public boolean isRotacionDer180() {
         return rotacionDer180;
     }
-    private boolean rotacionIzq180;
-    private boolean rotacionDer180;
-    private boolean[][] matriz;
 
-    public Ficha(int filas, int columnas, boolean[] piezas) {
-        this.filas = filas;
-        this.columnas = columnas;
-        this.setMatriz(piezas);
-        this.calcularRotaciones();
-    }
-    
-    @Override
-    public String toString() {
-        String out = 
-                "\nFilas: " + this.filas +
-                "\nColumnas: " + this.columnas +
-                "\nRotación -90: " + this.rotacionIzq90 +
-                "\nRotación +90: " + this.rotacionDer90 +
-                "\nRotación -180: " + this.rotacionIzq180 +
-                "\nRotación +180: " + this.rotacionDer180 + "\n";
-        
-        for(int fila = 0; fila < this.filas; fila++) {
-            for(int col = 0; col < this.columnas; col++) {
-                out += "\t" + (this.matriz[fila][col] ? 1:0);
-            }
-            out += "\n";
-        }
-        
-        return out;
-    }
-    
     public int getFilas() {
         return filas;
     }
@@ -71,53 +92,82 @@ public class Ficha {
     public int getColumnas() {
         return columnas;
     }
-    
-    private void setMatriz(boolean[] piezas) {
-        this.matriz = new boolean[this.filas][this.columnas];
+
+    public void setMatriz(boolean[] piezas) {
+        this.matriz = new Celda[this.filas][this.columnas];
+
         for (int fila = 0, i = 0; fila < this.filas; fila++) {
             for (int col = 0; col < this.columnas; col++, i++) {
-                this.matriz[fila][col] = piezas[i];
+                this.matriz[fila][col] = new Celda(piezas[i], this.color);
             }
         }
     }
-    
-    private void replaceMatriz(boolean[][] newMatriz) {
-//        this.matriz = new boolean[newMatriz.length][newMatriz[0].length];
-//        for (int fila = 0; fila < this.filas; fila++) {
-//            for (int col = 0; col < this.columnas; col++) {
-//                this.matriz[fila][col] = newMatriz[fila][col];
-//            }
-//        }
-        this.matriz = newMatriz;
+
+    public void setMatriz(Celda[][] matriz) {
+        this.matriz = new Celda[this.filas][this.columnas];
+
+        for (int fila = 0; fila < this.filas; fila++) {
+            for (int col = 0; col < this.columnas; col++) {
+                this.matriz[fila][col] = new Celda(matriz[fila][col].isOcupada(), this.color);
+            }
+        }
     }
-    
-    public boolean[][] getMatriz() {
+
+//    private void replaceMatriz(boolean[][] newMatriz) {
+//        this.matriz = newMatriz;
+//    }
+    public Celda[][] getMatriz() {
         return this.matriz;
     }
-
-    private void calcularRotaciones() {
-        boolean[][] oldMatriz = new boolean[this.matriz.length][this.matriz[0].length];
-        for (int i = 0; i < this.matriz.length; i++) {
-            for (int j = 0; j < this.matriz[i].length; j++) {
-                oldMatriz[i][j] = this.matriz[i][j];
+    
+    public boolean esIgualA(Ficha ficha) {
+        boolean resultado = true;
+        
+        if(this.getColumnas() == ficha.getColumnas() && this.getFilas() == ficha.getFilas()) {
+            for (int i=0; i<this.getFilas() && resultado; i++) {
+                for (int j=0; j<this.getColumnas() && resultado; j++) {
+                    resultado &= this.getMatriz()[i][j].isOcupada() == ficha.getMatriz()[i][j].isOcupada();
+                }
             }
+        } else {
+            resultado = false;
         }
         
-        rotarIzq90();
-        this.rotacionIzq90 = !Arrays.deepEquals(this.matriz, oldMatriz);
-        rotarDer180();
-        this.rotacionDer90 = !Arrays.deepEquals(this.matriz, oldMatriz);
-        rotarDer90();
-        this.rotacionDer180 = !Arrays.deepEquals(this.matriz, oldMatriz);
-        rotarDer180();
-        //rotar +180 es igual a rotar -180
-        this.rotacionIzq180 = this.rotacionDer180;
+        return resultado;
+    }
+    
+    
+
+    public List<Ficha> getRotaciones() {
+        List<Ficha> fichas = new ArrayList<Ficha>();
+        Ficha fichaRotadaIzq90 = this.rotarIzq90();
+        Ficha fichaRotadaDer90 = this.rotarDer90();
+        Ficha fichaRotada180 = this.rotar180();
+
+        fichas.add(this);
+
+        if (!this.esIgualA(fichaRotadaIzq90)) {
+            this.rotacionIzq90 = true;
+            fichas.add(fichaRotadaIzq90);
+        }
+
+        if (!fichaRotadaIzq90.esIgualA(fichaRotadaDer90)) {
+            this.rotacionDer90 = true;
+            fichas.add(fichaRotadaDer90);
+        }
+
+        if (!this.esIgualA(fichaRotada180)) {
+            this.rotacionIzq180 = true;
+            fichas.add(fichaRotada180);
+        }
+
+        return fichas;
     }
 
-    private static boolean[][] invertirColumnasMatriz(boolean[][] matriz) {
+    private static Celda[][] invertirColumnasMatriz(Celda[][] matriz) {
         for (int fila = 0; fila < matriz.length; fila++) {
             for (int col = 0; col < matriz[fila].length / 2; col++) {
-                boolean aux = matriz[fila][col];
+                Celda aux = new Celda(matriz[fila][col].isOcupada(), matriz[fila][col].getColor());
                 matriz[fila][col] = matriz[fila][matriz[fila].length - col - 1];
                 matriz[fila][matriz[0].length - col - 1] = aux;
             }
@@ -126,9 +176,9 @@ public class Ficha {
         return matriz;
     }
 
-    private static boolean[][] invertirFilasMatriz(boolean[][] matriz) {
+    private static Celda[][] invertirFilasMatriz(Celda[][] matriz) {
         for (int fila = 0; fila < matriz.length / 2; fila++) {
-            boolean[] aux = matriz[fila];
+            Celda[] aux = matriz[fila];
             matriz[fila] = matriz[matriz.length - fila - 1];
             matriz[matriz.length - fila - 1] = aux;
         }
@@ -136,60 +186,61 @@ public class Ficha {
         return matriz;
     }
 
-    private static boolean[][] transponerMatriz(boolean[][] matriz) {
-        boolean[][] matrizOut = new boolean[matriz[0].length][matriz.length];
-        
+    private static Celda[][] transponerMatriz(Celda[][] matriz) {
+        Celda[][] matrizOut = new Celda[matriz[0].length][matriz.length];
+
         for (int fila = 0; fila < matriz.length; fila++) {
             for (int col = 0; col < matriz[fila].length; col++) {
-                matrizOut[col][fila] = matriz[fila][col];
+                matrizOut[col][fila] = new Celda(matriz[fila][col].isOcupada(), matriz[fila][col].getColor());
             }
         }
 
         return matrizOut;
     }
 
-//    private static boolean[][] rotarIzq90(boolean[][] matriz) {
-//        return invertirColumnasMatriz(
-//                transponerMatriz(matriz));
-//    }
-//
-//    private static boolean[][] rotarDer90(boolean[][] matriz) {
-//        return invertirFilasMatriz(
-//                transponerMatriz(matriz));
-//    }
-//
-//    private static boolean[][] rotarDer180(boolean[][] matriz) {
-//        return rotarDer90(
-//                rotarDer90(matriz));
-//    }
-//
-//    private static boolean[][] rotarIzq180(boolean[][] matriz) {
-//        return rotarIzq90(
-//                rotarIzq90(matriz));
-//    }
-    
-    public void rotarIzq90() {
-        replaceMatriz(
+    public Ficha rotarIzq90() {
+        return new Ficha(
                 invertirColumnasMatriz(
-                    transponerMatriz(this.matriz)));
+                        transponerMatriz(this.matriz)));
     }
 
-    public void  rotarDer90() {
-        replaceMatriz(
+    public Ficha rotarDer90() {
+        return new Ficha(
                 invertirFilasMatriz(
-                    transponerMatriz(this.matriz)));
+                        transponerMatriz(this.matriz)));
     }
 
-    public void  rotarDer180() {
-        rotarDer90(); 
-        rotarDer90();
+    public Ficha rotarDer180() {
+        return new Ficha(
+                rotarDer90().
+                rotarDer90());
     }
 
-    public void  rotarIzq180() {
-        rotarIzq90();
-        rotarIzq90();
+    public Ficha rotar180() {
+        return new Ficha(
+                rotarDer90().
+                rotarDer90());
     }
-    
-    
 
+//    public void rotarIzq90() {
+//        replaceMatriz(
+//                invertirColumnasMatriz(
+//                    transponerMatriz(this.matriz)));
+//    }
+//
+//    public void  rotarDer90() {
+//        replaceMatriz(
+//                invertirFilasMatriz(
+//                    transponerMatriz(this.matriz)));
+//    }
+//
+//    public void  rotarDer180() {
+//        rotarDer90(); 
+//        rotarDer90();
+//    }
+//
+//    public void  rotarIzq180() {
+//        rotarIzq90();
+//        rotarIzq90();
+//    }
 }
